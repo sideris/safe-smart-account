@@ -2,7 +2,7 @@ import { getCompatFallbackHandler } from "./../utils/setup";
 import { calculateSafeMessageHash, signHash, buildContractSignature } from "./../../src/utils/execution";
 import { expect } from "chai";
 import { deployments, waffle } from "hardhat";
-import "@nomiclabs/hardhat-ethers";
+import "@nomicfoundation/hardhat-ethers";
 import { AddressZero } from "@ethersproject/constants";
 import crypto from "crypto";
 import { getSafeTemplate, getSafeWithOwners } from "../utils/setup";

@@ -1,6 +1,6 @@
 import { expect } from "chai";
 import { ethers, deployments, waffle } from "hardhat";
-import "@nomiclabs/hardhat-ethers";
+import "@nomicfoundation/hardhat-ethers";
 import { AddressZero } from "@ethersproject/constants";
 import { getSafeWithOwners, getSafeSingleton, migrationContract } from "../utils/setup";
 import deploymentData from "../json/safeDeployment.json";

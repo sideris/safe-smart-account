@@ -1,6 +1,6 @@
 import { expect } from "chai";
 import { waffle, ethers } from "hardhat";
-import "@nomiclabs/hardhat-ethers";
+import "@nomicfoundation/hardhat-ethers";
 import { buildSafeTransaction } from "../src/utils/execution";
 import { BigNumber } from "ethers";
 import { benchmark } from "./utils/setup"

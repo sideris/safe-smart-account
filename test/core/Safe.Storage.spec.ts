@@ -1,6 +1,6 @@
 import { expect } from "chai";
 import hre from "hardhat";
-import "@nomiclabs/hardhat-ethers";
+import "@nomicfoundation/hardhat-ethers";
 import { getContractStorageLayout } from "../utils/storage";
 
 describe("Safe", async () => {

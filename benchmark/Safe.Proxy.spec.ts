@@ -1,4 +1,4 @@
-import "@nomiclabs/hardhat-ethers";
+import "@nomicfoundation/hardhat-ethers";
 import { buildSafeTransaction } from "../src/utils/execution";
 import { benchmark } from "./utils/setup"
 import { getFactory } from "../test/utils/setup";

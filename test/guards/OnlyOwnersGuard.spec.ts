@@ -1,6 +1,6 @@
 import { expect } from "chai";
 import hre, { deployments, waffle } from "hardhat";
-import "@nomiclabs/hardhat-ethers";
+import "@nomicfoundation/hardhat-ethers";
 import { getMock, getSafeWithOwners } from "../utils/setup";
 import { buildSafeTransaction, executeContractCallWithSigners, executeTxWithSigners } from "../../src/utils/execution";
 

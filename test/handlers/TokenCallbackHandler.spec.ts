@@ -1,6 +1,6 @@
 import { expect } from "chai";
 import { deployments } from "hardhat";
-import "@nomiclabs/hardhat-ethers";
+import "@nomicfoundation/hardhat-ethers";
 import { AddressZero } from "@ethersproject/constants";
 import { getTokenCallbackHandler } from "../utils/setup";
 

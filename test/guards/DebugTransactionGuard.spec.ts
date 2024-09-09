@@ -1,7 +1,7 @@
 import { signHash } from "./../../src/utils/execution";
 import { expect } from "chai";
 import hre, { deployments, waffle } from "hardhat";
-import "@nomiclabs/hardhat-ethers";
+import "@nomicfoundation/hardhat-ethers";
 import { getMock, getSafeWithOwners } from "../utils/setup";
 import { buildSafeTransaction, calculateSafeTransactionHash, executeContractCallWithSigners, executeTx } from "../../src/utils/execution";
 import { chainId } from "../utils/encoding";

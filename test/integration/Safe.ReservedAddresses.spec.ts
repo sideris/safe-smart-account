@@ -1,6 +1,6 @@
 import { expect } from "chai";
 import hre, { deployments, waffle } from "hardhat";
-import "@nomiclabs/hardhat-ethers";
+import "@nomicfoundation/hardhat-ethers";
 import { getSafeWithOwners } from "../utils/setup";
 import { AddressOne } from "../../src/utils/constants";
 

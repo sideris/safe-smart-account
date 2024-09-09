@@ -1,5 +1,5 @@
 import "hardhat-deploy";
-import "@nomiclabs/hardhat-ethers";
+import "@nomicfoundation/hardhat-ethers";
 import { task, types } from "hardhat/config";
 import { loadSolc } from "../utils/solc";
 

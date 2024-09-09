@@ -1,7 +1,7 @@
 import { expect } from "chai";
 import hre, { deployments, waffle, ethers } from "hardhat";
 import { BigNumber } from "ethers";
-import "@nomiclabs/hardhat-ethers";
+import "@nomicfoundation/hardhat-ethers";
 import { AddressZero } from "@ethersproject/constants";
 import { getMock, getSafeWithOwners } from "../utils/setup";
 import {

@@ -1,6 +1,6 @@
 import { expect } from "chai";
 import { deployments, waffle } from "hardhat";
-import "@nomiclabs/hardhat-ethers";
+import "@nomicfoundation/hardhat-ethers";
 import { getSafeSingleton, getSafeWithOwners } from "../utils/setup";
 import { utils } from "ethers";
 import { killLibContract } from "../utils/contracts";

@@ -1,4 +1,4 @@
-import "@nomiclabs/hardhat-ethers";
+import "@nomicfoundation/hardhat-ethers";
 import { setupBenchmarkContracts } from "./utils/setup"
 
 const contractSetup = setupBenchmarkContracts(undefined, true)

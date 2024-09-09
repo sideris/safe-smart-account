@@ -1,7 +1,7 @@
 import { buildContractSignature } from "./../../src/utils/execution";
 import { expect } from "chai";
 import hre, { deployments, waffle, ethers } from "hardhat";
-import "@nomiclabs/hardhat-ethers";
+import "@nomicfoundation/hardhat-ethers";
 import { AddressZero } from "@ethersproject/constants";
 import { compatFallbackHandlerContract, getCompatFallbackHandler, getSafeWithOwners } from "../utils/setup";
 import {

@@ -1,6 +1,6 @@
 import { expect } from "chai";
 import hre, { deployments, waffle, ethers } from "hardhat";
-import "@nomiclabs/hardhat-ethers";
+import "@nomicfoundation/hardhat-ethers";
 import { compile, getCreateCall, getSafeWithOwners } from "../utils/setup";
 import { buildContractCall, executeTx, safeApproveHash } from "../../src/utils/execution";
 import { parseEther } from "@ethersproject/units";
