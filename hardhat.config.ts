@@ -87,8 +87,10 @@ const userConfig: HardhatUserConfig = {
         compilers: [{ version: primarySolidityVersion, settings: soliditySettings }, { version: defaultSolidityVersion }],
     },
     zksolc: {
-        version: "1.5.3",
-        settings: {},
+        version: "1.5.4",
+        settings: {
+            suppressedErrors: ["sendtransfer"],
+        },
     },
     networks: {
         hardhat: {

@@ -14,6 +14,7 @@ coverage.json
 yarn-error.log
 .vscode
 typechain-types
+era_test_node.log
 
 # Certora Formal Verification related files
 .certora_internal
