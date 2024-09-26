@@ -1,5 +1,5 @@
 import { expect } from "chai";
-import hre, { ethers } from "hardhat";
+import hre, { deployments, ethers } from "hardhat";
 import { AddressZero } from "@ethersproject/constants";
 import { getMock, getSafe } from "../utils/setup";
 import {
@@ -12,93 +12,73 @@ import {
     safeApproveHash,
 } from "../../src/utils/execution";
 import { chainId } from "../utils/encoding";
-import { getSenderAddressFromContractRunner } from "../utils/contracts";
 
 describe("GuardManager", () => {
-    const GUARD_STORAGE_SLOT = ethers.keccak256(ethers.toUtf8Bytes("guard_manager.guard.address"));
-
-    const setupWithTemplate = hre.deployments.createFixture(async ({ deployments }) => {
+    const setupWithTemplate = deployments.createFixture(async ({ deployments }) => {
         await deployments.fixture();
-        const validGuardMock = await getMock();
-        const validGuardMockAddress = await validGuardMock.getAddress();
-        const signers = await hre.ethers.getSigners();
-        const [, user2] = signers;
+        const [user1, user2] = await hre.ethers.getSigners();
 
-        const guardContract = await hre.ethers.getContractAt("ITransactionGuard", AddressZero);
+        const mock = await getMock();
+        const mockAddress = await mock.getAddress();
+
+        const guardContract = await hre.ethers.getContractAt("Guard", AddressZero);
         const guardEip165Calldata = guardContract.interface.encodeFunctionData("supportsInterface", ["0xe6d7a83a"]);
-        await validGuardMock.givenCalldataReturnBool(guardEip165Calldata, true);
+        await mock.givenCalldataReturnBool(guardEip165Calldata, true);
         const safe = await getSafe({ owners: [user2.address] });
-        await executeContractCallWithSigners(safe, safe, "setGuard", [validGuardMockAddress], [user2]);
+        await executeContractCallWithSigners(safe, safe, "setGuard", [mockAddress], [user2]);
         return {
             safe,
-            validGuardMock,
+            mock,
             guardEip165Calldata,
-            signers,
+            user1,
+            user2,
         };
     });
 
-    describe("setGuard", () => {
-        it("reverts if the guard does not implement the ERC165 ITransactionGuard Interface", async () => {
-            const {
-                signers: [user1, user2],
-            } = await setupWithTemplate();
-            const safe = await getSafe({ owners: [user1.address] });
-
-            await expect(executeContractCallWithSigners(safe, safe, "setGuard", [user2.address], [user1])).to.be.revertedWith("GS013");
-        });
-
-        it("emits an event when the guard is changed", async () => {
-            const {
-                validGuardMock,
-                signers: [user1],
-            } = await setupWithTemplate();
-            const validGuardMockAddress = await validGuardMock.getAddress();
-            const safe = await getSafe({ owners: [user1.address] });
-
-            await expect(executeContractCallWithSigners(safe, safe, "setGuard", [validGuardMockAddress], [user1]))
-                .to.emit(safe, "ChangedGuard")
-                .withArgs(validGuardMockAddress);
-
-            await expect(executeContractCallWithSigners(safe, safe, "setGuard", [AddressZero], [user1]))
-                .to.emit(safe, "ChangedGuard")
-                .withArgs(AddressZero);
-        });
-
+    describe("setGuard", async () => {
         it("is not called when setting initially", async () => {
-            const {
-                validGuardMock,
-                signers: [user1],
-            } = await setupWithTemplate();
+            const { safe, mock, guardEip165Calldata, user2 } = await setupWithTemplate();
+            const safeAddress = await safe.getAddress();
+            const mockAddress = await mock.getAddress();
 
-            const invocationCountBefore = await validGuardMock.invocationCount();
-            const validGuardMockAddress = await validGuardMock.getAddress();
-            const safe = await getSafe({ owners: [user1.address] });
+            const slot = ethers.keccak256(ethers.toUtf8Bytes("guard_manager.guard.address"));
 
-            await executeContractCallWithSigners(safe, safe, "setGuard", [validGuardMockAddress], [user1]);
+            await executeContractCallWithSigners(safe, safe, "setGuard", [AddressZero], [user2]);
 
             // Check guard
-            await expect(await hre.ethers.provider.getStorage(await safe.getAddress(), GUARD_STORAGE_SLOT)).to.be.eq(
-                "0x" + validGuardMockAddress.toLowerCase().slice(2).padStart(64, "0"),
+            await expect(await hre.ethers.provider.getStorage(safeAddress, slot)).to.be.eq("0x" + "".padStart(64, "0"));
+
+            await mock.reset();
+
+            await expect(await hre.ethers.provider.getStorage(safeAddress, slot)).to.be.eq("0x" + "".padStart(64, "0"));
+
+            // Reverts if it doesn't implement ERC165 Guard Interface
+            await expect(executeContractCallWithSigners(safe, safe, "setGuard", [mockAddress], [user2])).to.be.revertedWith("GS013");
+
+            await mock.givenCalldataReturnBool(guardEip165Calldata, true);
+            await expect(executeContractCallWithSigners(safe, safe, "setGuard", [mockAddress], [user2]))
+                .to.emit(safe, "ChangedGuard")
+                .withArgs(mockAddress);
+
+            // Check guard
+            await expect(await hre.ethers.provider.getStorage(safeAddress, slot)).to.be.eq(
+                "0x" + mockAddress.toLowerCase().slice(2).padStart(64, "0"),
             );
 
-            // Transaction Guard should not be called, as it was not set before the transaction execution
-            expect(await validGuardMock.invocationCount()).to.be.eq(invocationCountBefore);
+            // Guard should not be called, as it was not set before the transaction execution
+            expect(await mock.invocationCount()).to.be.eq(0);
         });
 
         it("is called when removed", async () => {
-            const {
-                safe,
-                validGuardMock,
-                signers: [, user2],
-            } = await setupWithTemplate();
-            const invocationCountBefore = await validGuardMock.invocationCount();
-            const validGuardMockAddress = await validGuardMock.getAddress();
+            const { safe, mock, user1, user2 } = await setupWithTemplate();
             const safeAddress = await safe.getAddress();
-            const safeMsgSender = getSenderAddressFromContractRunner(safe);
+            const mockAddress = await mock.getAddress();
+
+            const slot = ethers.keccak256(ethers.toUtf8Bytes("guard_manager.guard.address"));
 
             // Check guard
-            await expect(await hre.ethers.provider.getStorage(await safe.getAddress(), GUARD_STORAGE_SLOT)).to.be.eq(
-                "0x" + validGuardMockAddress.toLowerCase().slice(2).padStart(64, "0"),
+            await expect(await hre.ethers.provider.getStorage(safeAddress, slot)).to.be.eq(
+                "0x" + mockAddress.toLowerCase().slice(2).padStart(64, "0"),
             );
 
             const safeTx = await buildContractCall(safe, "setGuard", [AddressZero], await safe.nonce());
@@ -110,12 +90,9 @@ describe("GuardManager", () => {
                 .withArgs(AddressZero);
 
             // Check guard
-            await expect(await hre.ethers.provider.getStorage(await safe.getAddress(), GUARD_STORAGE_SLOT)).to.be.eq(
-                "0x" + "".padStart(64, "0"),
-            );
-
-            expect(await validGuardMock.invocationCount()).to.be.eq(invocationCountBefore + 2n);
-            const guardInterface = (await hre.ethers.getContractAt("ITransactionGuard", validGuardMockAddress)).interface;
+            await expect(await hre.ethers.provider.getStorage(safeAddress, slot)).to.be.eq("0x" + "".padStart(64, "0"));
+            expect(await mock.invocationCount()).to.be.eq(2);
+            const guardInterface = (await hre.ethers.getContractAt("Guard", mockAddress)).interface;
             const checkTxData = guardInterface.encodeFunctionData("checkTransaction", [
                 safeTx.to,
                 safeTx.value,
@@ -127,33 +104,30 @@ describe("GuardManager", () => {
                 safeTx.gasToken,
                 safeTx.refundReceiver,
                 signatureBytes,
-                safeMsgSender,
+                user1.address,
             ]);
-            expect(await validGuardMock.invocationCountForCalldata.staticCall(checkTxData)).to.be.eq(1);
-            // Transaction Guard should also be called for post exec check, even if it is removed with the Safe tx
+
+            expect(await mock.invocationCountForCalldata(checkTxData)).to.be.eq(1);
+            // Guard should also be called for post exec check, even if it is removed with the Safe tx
             const checkExecData = guardInterface.encodeFunctionData("checkAfterExecution", [
                 calculateSafeTransactionHash(safeAddress, safeTx, await chainId()),
                 true,
             ]);
-            expect(await validGuardMock.invocationCountForCalldata.staticCall(checkExecData)).to.be.eq(1);
+            expect(await mock.invocationCountForCalldata(checkExecData)).to.be.eq(1);
         });
     });
 
-    describe("execTransaction", () => {
+    describe("execTransaction", async () => {
         it("reverts if the pre hook of the guard reverts", async () => {
-            const {
-                safe,
-                validGuardMock,
-                signers: [, user2],
-            } = await setupWithTemplate();
-            const validGuardMockAddress = await validGuardMock.getAddress();
-            const safeAddress = await safe.getAddress();
-            const safeMsgSender = getSenderAddressFromContractRunner(safe);
+            const { safe, mock, user1, user2 } = await setupWithTemplate();
 
-            const safeTx = buildSafeTransaction({ to: validGuardMockAddress, data: "0xbaddad42", nonce: await safe.nonce() });
+            const safeAddress = await safe.getAddress();
+            const mockAddress = await mock.getAddress();
+
+            const safeTx = buildSafeTransaction({ to: mockAddress, data: "0xbaddad42", nonce: 1 });
             const signature = await safeApproveHash(user2, safe, safeTx);
             const signatureBytes = buildSignatureBytes([signature]);
-            const guardInterface = (await hre.ethers.getContractAt("ITransactionGuard", validGuardMockAddress)).interface;
+            const guardInterface = (await hre.ethers.getContractAt("Guard", mockAddress)).interface;
             const checkTxData = guardInterface.encodeFunctionData("checkTransaction", [
                 safeTx.to,
                 safeTx.value,
@@ -165,9 +139,9 @@ describe("GuardManager", () => {
                 safeTx.gasToken,
                 safeTx.refundReceiver,
                 signatureBytes,
-                safeMsgSender,
+                user1.address,
             ]);
-            await validGuardMock.givenCalldataRevertWithMessage(checkTxData, "Computer says Nah");
+            await mock.givenCalldataRevertWithMessage(checkTxData, "Computer says Nah");
             const checkExecData = guardInterface.encodeFunctionData("checkAfterExecution", [
                 calculateSafeTransactionHash(safeAddress, safeTx, await chainId()),
                 true,
@@ -175,30 +149,25 @@ describe("GuardManager", () => {
 
             await expect(executeTx(safe, safeTx, [signature])).to.be.revertedWith("Computer says Nah");
 
-            await validGuardMock.reset();
+            await mock.reset();
 
             await expect(executeTx(safe, safeTx, [signature])).to.emit(safe, "ExecutionSuccess");
 
-            expect(await validGuardMock.invocationCount()).to.eq(3n);
-            expect(await validGuardMock.invocationCountForCalldata(checkTxData)).to.eq(1n);
-            expect(await validGuardMock.invocationCountForCalldata(checkExecData)).to.eq(1n);
-            expect(await validGuardMock.invocationCountForCalldata("0xbaddad42")).to.eq(1n);
+            expect(await mock.invocationCount()).to.equal(3n);
+            expect(await mock.invocationCountForCalldata(checkTxData)).to.equal(1n);
+            expect(await mock.invocationCountForCalldata(checkExecData)).to.equal(1n);
+            expect(await mock.invocationCountForCalldata("0xbaddad42")).to.equal(1n);
         });
 
         it("reverts if the post hook of the guard reverts", async () => {
-            const {
-                safe,
-                validGuardMock,
-                signers: [, user2],
-            } = await setupWithTemplate();
-            const validGuardMockAddress = await validGuardMock.getAddress();
+            const { safe, mock, user1, user2 } = await setupWithTemplate();
             const safeAddress = await safe.getAddress();
-            const safeMsgSender = getSenderAddressFromContractRunner(safe);
+            const mockAddress = await mock.getAddress();
 
-            const safeTx = buildSafeTransaction({ to: validGuardMockAddress, data: "0xbaddad42", nonce: await safe.nonce() });
+            const safeTx = buildSafeTransaction({ to: mockAddress, data: "0xbaddad42", nonce: 1 });
             const signature = await safeApproveHash(user2, safe, safeTx);
             const signatureBytes = buildSignatureBytes([signature]);
-            const guardInterface = (await hre.ethers.getContractAt("ITransactionGuard", validGuardMockAddress)).interface;
+            const guardInterface = (await hre.ethers.getContractAt("Guard", mockAddress)).interface;
             const checkTxData = guardInterface.encodeFunctionData("checkTransaction", [
                 safeTx.to,
                 safeTx.value,
@@ -210,24 +179,24 @@ describe("GuardManager", () => {
                 safeTx.gasToken,
                 safeTx.refundReceiver,
                 signatureBytes,
-                safeMsgSender,
+                user1.address,
             ]);
             const checkExecData = guardInterface.encodeFunctionData("checkAfterExecution", [
                 calculateSafeTransactionHash(safeAddress, safeTx, await chainId()),
                 true,
             ]);
-            await validGuardMock.givenCalldataRevertWithMessage(checkExecData, "Computer says Nah");
+            await mock.givenCalldataRevertWithMessage(checkExecData, "Computer says Nah");
 
             await expect(executeTx(safe, safeTx, [signature])).to.be.revertedWith("Computer says Nah");
 
-            await validGuardMock.reset();
+            await mock.reset();
 
             await expect(executeTx(safe, safeTx, [signature])).to.emit(safe, "ExecutionSuccess");
 
-            expect(await validGuardMock.invocationCount()).to.eq(3n);
-            expect(await validGuardMock.invocationCountForCalldata(checkTxData)).to.eq(1n);
-            expect(await validGuardMock.invocationCountForCalldata(checkExecData)).to.eq(1n);
-            expect(await validGuardMock.invocationCountForCalldata("0xbaddad42")).to.eq(1n);
+            expect(await mock.invocationCount()).to.equal(3n);
+            expect(await mock.invocationCountForCalldata(checkTxData)).to.equal(1n);
+            expect(await mock.invocationCountForCalldata(checkExecData)).to.equal(1n);
+            expect(await mock.invocationCountForCalldata("0xbaddad42")).to.equal(1n);
         });
     });
 });

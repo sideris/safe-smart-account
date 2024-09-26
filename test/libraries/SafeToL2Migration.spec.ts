@@ -76,14 +76,6 @@ describe("SafeToL2Migration library", () => {
         const singleton130 = await getSafeSingletonAt(SAFE_SINGLETON_130_ADDRESS);
         const singleton141 = await getSafeSingletonAt(SAFE_SINGLETON_141_ADDRESS);
 
-        const guardContract = await hre.ethers.getContractAt("ITransactionGuard", AddressZero);
-        const guardEip165Calldata = guardContract.interface.encodeFunctionData("supportsInterface", ["0xe6d7a83a"]);
-        const validGuardMock = await getMock();
-        await validGuardMock.givenCalldataReturnBool(guardEip165Calldata, true);
-
-        const invalidGuardMock = await getMock();
-        await invalidGuardMock.givenCalldataReturnBool(guardEip165Calldata, false);
-
         const safeWith1967Proxy = await getSafeSingletonAt(
             await hre.ethers
                 .getContractFactory("UpgradeableProxy")
@@ -113,8 +105,6 @@ describe("SafeToL2Migration library", () => {
             safeWith1967Proxy,
             migration,
             signers,
-            validGuardMock,
-            invalidGuardMock,
         };
     });
 

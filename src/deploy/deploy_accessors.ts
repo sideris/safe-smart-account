@@ -3,7 +3,6 @@ import { HardhatRuntimeEnvironment } from "hardhat/types";
 import { getDeployerAccount } from "../utils/deploy";
 
 const deploy: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
-    console.log("deploying the accessor")
     const { deployments } = hre;
     const deployerAccount = await getDeployerAccount(hre);
     const { deploy } = deployments;

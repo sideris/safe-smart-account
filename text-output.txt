@@ -1,12 +1,8 @@
-
-> @safe-global/safe-contracts@1.4.1-1 test
-> hardhat test && npm run test:SafeToL2Setup:L1
-
 TypeError: Cannot read properties of undefined (reading 'provider')
 
   1) Uncaught error outside test suite
 
-  0 passing (1ms)
+  0 passing (0ms)
   1 failing
 
   1) Uncaught error outside test suite:
@@ -14,6 +10,7 @@ TypeError: Cannot read properties of undefined (reading 'provider')
       at process.abort (node_modules/solc/soljson.js:1:13939)
       at process.emit (node:events:526:35)
       at process.emit (node_modules/source-map-support/source-map-support.js:516:21)
+      at process.emit.sharedData.processEmitHook.installedValue (node_modules/@cspotcode/source-map-support/source-map-support.js:745:40)
       at processEmit [as emit] (node_modules/proper-lockfile/node_modules/signal-exit/index.js:199:34)
       at emit (node:internal/process/promises:150:20)
       at processPromiseRejections (node:internal/process/promises:284:27)

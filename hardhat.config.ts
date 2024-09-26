@@ -1,8 +1,5 @@
+import "@nomicfoundation/hardhat-toolbox";
 import type { HardhatUserConfig, HttpNetworkUserConfig } from "hardhat/types";
-import "@nomicfoundation/hardhat-ethers";
-import "@nomicfoundation/hardhat-verify";
-import '@typechain/hardhat'
-import '@nomicfoundation/hardhat-chai-matchers'
 import "@matterlabs/hardhat-zksync-deploy";
 import "@matterlabs/hardhat-zksync-solc";
 import "@matterlabs/hardhat-zksync-verify";
@@ -19,7 +16,8 @@ const argv = yargs
         default: "hardhat",
     })
     .help(false)
-    .version(false).argv;
+    .version(false)
+    .parseSync();
 
 // Load environment variables.
 dotenv.config();
@@ -31,8 +29,8 @@ const {
     PK,
     SOLIDITY_VERSION,
     SOLIDITY_SETTINGS,
-    HARDHAT_CHAIN_ID = 31337,
     HARDHAT_ENABLE_ZKSYNC = "0",
+    HARDHAT_CHAIN_ID = 31337,
 } = process.env;
 
 const DEFAULT_MNEMONIC = "candy maple cake sugar pudding cream honey rich smooth crumble sweet treat";
@@ -65,7 +63,7 @@ const deterministicDeployment = (network: string): DeterministicDeploymentInfo =
     if (!info) {
         throw new Error(`
         Safe factory not found for network ${network}. You can request a new deployment at https://github.com/safe-global/safe-singleton-factory.
-        For more information, see https://github.com/safe-global/safe-contracts#replay-protection-eip-155
+        For more information, see https://github.com/safe-global/safe-smart-account#replay-protection-eip-155
       `);
     }
     return {
@@ -83,13 +81,17 @@ const userConfig: HardhatUserConfig = {
         deploy: "src/deploy",
         sources: "contracts",
     },
+    typechain: {
+        outDir: "typechain-types",
+        target: "ethers-v6",
+    },
     solidity: {
         compilers: [{ version: primarySolidityVersion, settings: soliditySettings }, { version: defaultSolidityVersion }],
     },
     zksolc: {
         version: "1.5.4",
         settings: {
-            suppressedErrors: ["sendtransfer"],
+            suppressedWarnings: ["sendtransfer"],
         },
     },
     networks: {
@@ -157,6 +159,7 @@ const userConfig: HardhatUserConfig = {
     },
     mocha: {
         timeout: 2000000,
+        jobs: 1,
     },
     etherscan: {
         apiKey: ETHERSCAN_API_KEY,

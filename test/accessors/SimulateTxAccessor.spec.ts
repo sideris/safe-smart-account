@@ -33,7 +33,7 @@ describe("SimulateTxAccessor", () => {
     });
 
     describe("estimate", () => {
-        it.only("should enforce delegatecall", async () => {
+        it("should enforce delegatecall", async () => {
             const { accessor, signers, interactor } = await setupTests();
             const [user1] = signers;
             const tx = await buildContractCall(interactor, "sendAndReturnBalance", [user1.address, 0], 0);
