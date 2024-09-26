@@ -1,6 +1,8 @@
 import type { HardhatUserConfig, HttpNetworkUserConfig } from "hardhat/types";
 import "@nomicfoundation/hardhat-ethers";
 import "@nomicfoundation/hardhat-verify";
+import '@typechain/hardhat'
+import '@nomicfoundation/hardhat-chai-matchers'
 import "@matterlabs/hardhat-zksync-deploy";
 import "@matterlabs/hardhat-zksync-solc";
 import "@matterlabs/hardhat-zksync-verify";
